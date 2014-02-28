@@ -37,22 +37,27 @@ void KeypadInitialize() {
         TRISBbits.TRISB13 = 0;
         TRISBbits.TRISB12= 0;
 
-        // setting open drain configuration
+    // setting open drain configuration
         ODCBbits.ODB15 = 1;
         ODCBbits.ODB14 = 1;
         ODCBbits.ODB13 = 1;
         ODCBbits.ODB12 = 1;
 
-	//columns set as inputs
+    //disabling pull-up resistors for rb12-15
+        CNPU1bits.CN11PUE = 0;
+		CNPU1bits.CN12PUE = 0;
+		CNPU1bits.CN13PUE = 0;
+		CNPU1bits.CN14PUE = 0;
 
+	//columns set as inputs
         TRISBbits.TRISB11 = 1;
         TRISBbits.TRISB10 = 1;
         TRISBbits.TRISB7 = 1;
 
 	//enabling pull-up resistors
 	
-	CNPU1bits.CN15PUE = 1;
-	CNPU2bits.CN16PUE = 1;
+        CNPU1bits.CN15PUE = 1;
+        CNPU2bits.CN16PUE = 1;
         CNPU2bits.CN23PUE = 1;
 
         // Change notification
@@ -70,11 +75,11 @@ void KeypadInitialize() {
 void FlipIO(){
     //rows set as input
         TRISBbits.TRISB15 ^= 1;
-	TRISBbits.TRISB14 ^= 1;
-	TRISBbits.TRISB13 ^= 1;
-	TRISBbits.TRISB12 ^= 1;
+        TRISBbits.TRISB14 ^= 1;
+        TRISBbits.TRISB13 ^= 1;
+        TRISBbits.TRISB12 ^= 1;
 
-        // setting open drain configuration
+    // setting open drain configuration
         ODCBbits.ODB15 ^= 1;
         ODCBbits.ODB14 ^= 1;
         ODCBbits.ODB13 ^= 1;
@@ -92,12 +97,12 @@ void FlipIO(){
 
 	//enabling pull-up resistors
 
-	CNPU1bits.CN15PUE ^= 1;
-	CNPU2bits.CN16PUE ^= 1;
+        CNPU1bits.CN15PUE ^= 1;
+        CNPU2bits.CN16PUE ^= 1;
         CNPU2bits.CN23PUE ^= 1;
 
         CNPU1bits.CN15PUE ^= 1;
-	CNPU2bits.CN16PUE ^= 1;
+        CNPU2bits.CN16PUE ^= 1;
         CNPU2bits.CN23PUE ^= 1;
         CNPU2bits.CN23PUE ^= 1;
 }
