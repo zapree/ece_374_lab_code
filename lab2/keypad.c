@@ -8,17 +8,34 @@
 #define KP_ROW1		PORTBbits.RB13
 #define KP_ROW2		PORTBbits.RB14
 #define KP_ROW3		PORTBbits.RB15
-#define KP_COL0 	PORTBbits.RB7
+#define KP_COL0 	PORTBbits.RB9
 #define KP_COL1 	PORTBbits.RB10
 #define KP_COL2 	PORTBbits.RB11
 
 // ******************************************************************************************* //
 volatile int pressed =0;
 
+void DebounceDelay() {
+    TMR1 = 0;
+    T1CON |= 0x8000;     // turn on timer
+    while (IFS0bits.T1IF==0);
+    IFS0bits.T1IF = 0;
+    T1CONbits.TON = 0;
+
+}
+
 int main(void){
     KeypadInitialize();
+    T1CON = 0x0030;
+    TMR1=0;
+    PR1 = 288;
+    
 
-    while(1);
+    while(1){
+        if(PORTBbits.RB9 == 1){
+        int pass=0;
+    }
+    }
     return 1;
 }
 void KeypadInitialize() {
@@ -27,6 +44,11 @@ void KeypadInitialize() {
 	// TODO: Configure IOs and Change Notificaiton interrupt for keypad scanning. This 
 	// configuration should ensure that if any key is pressed, a change notification interrupt 
 	// will be generated.
+    //configure for digital
+        AD1PCFGbits.PCFG10=1;
+        AD1PCFGbits.PCFG9=1;
+        AD1PCFGbits.PCFG11=1;
+        AD1PCFGbits.PCFG12=1;
 	
 	//rows set as output
         TRISBbits.TRISB15 = 0;
@@ -35,46 +57,41 @@ void KeypadInitialize() {
         TRISBbits.TRISB12= 0;
     //output 0
         LATBbits.LATB15 = 0;
-		LATBbits.LATB14 = 0;
-		LATBbits.LATB13 = 0;
-		LATBbits.LATB12 = 0;
+        LATBbits.LATB14 = 0;
+        LATBbits.LATB13 = 0;
+        LATBbits.LATB12 = 0;
 
     // setting open drain configuration
+        /*
         ODCBbits.ODB15 = 1;
         ODCBbits.ODB14 = 1;
         ODCBbits.ODB13 = 1;
         ODCBbits.ODB12 = 1;
+          */
 
     //disabling pull-up resistors for rb12-15
         CNPU1bits.CN11PUE = 0;
-		CNPU1bits.CN12PUE = 0;
-		CNPU1bits.CN13PUE = 0;
-		CNPU1bits.CN14PUE = 0;
+        CNPU1bits.CN12PUE = 0;
+        CNPU1bits.CN13PUE = 0;
+        CNPU1bits.CN14PUE = 0;
+
 
 	//columns set as inputs
         TRISBbits.TRISB11 = 1;
         TRISBbits.TRISB10 = 1;
-        TRISBbits.TRISB7 = 1;
-    //for when we flip to be output we want it to be 0
-        LATBbits.LATB11 = 0;
-		LATBbits.LATB10 = 0;
-		LATBbits.LATB7 = 0;
+        TRISBbits.TRISB9 = 1;
+   
 
-	// setting open drain configuration
-		ODCBbits.ODB7 = 1;
-		ODCBbits.ODB10 = 1;
-		ODCBbits.ODB11 = 1;
-
-	//enabling pull-up resistors
+    //enabling pull-up resistors
 	
         CNPU1bits.CN15PUE = 1;
         CNPU2bits.CN16PUE = 1;
-        CNPU2bits.CN23PUE = 1;
+        CNPU2bits.CN21PUE = 1;
 
     // Change notification
         CNEN1bits.CN15IE = 1;
         CNEN2bits.CN16IE = 1;
-        CNEN2bits.CN23IE = 1;
+        CNEN2bits.CN21IE = 1;
 
         IFS1bits.CNIF = 0; // Clear the change notification interrupt flag
         IEC1bits.CNIE = 1; // Enable the change notification interrupt.
@@ -96,27 +113,27 @@ void FlipIO(){
         ODCBbits.ODB13 ^= 1;
         ODCBbits.ODB12 ^= 1;
     //disabling pull-up resistors for rb12-15
-		CNPU1bits.CN11PUE ^= 1;
-		CNPU1bits.CN12PUE ^= 1;
-		CNPU1bits.CN13PUE ^= 1;
-		CNPU1bits.CN14PUE ^= 1;
+        CNPU1bits.CN11PUE ^= 1;
+        CNPU1bits.CN12PUE ^= 1;
+        CNPU1bits.CN13PUE ^= 1;
+        CNPU1bits.CN14PUE ^= 1;
 
 	//columns set as outputs
 
         TRISBbits.TRISB11 ^= 1;
         TRISBbits.TRISB10 ^= 1;
-        TRISBbits.TRISB7 ^= 1;
+        TRISBbits.TRISB9 ^= 1;
 
 	// setting open drain configuration
-		ODCBbits.ODB7 ^= 1;
+		ODCBbits.ODB9 ^= 1;
 		ODCBbits.ODB10 ^= 1;
 		ODCBbits.ODB11 ^= 1;
 
-    //flip pull up resistors for rb7, 10, 11
+    //flip pull up resistors for rb9, 10, 11
 
         CNPU1bits.CN15PUE ^= 1;
         CNPU2bits.CN16PUE ^= 1;
-        CNPU2bits.CN23PUE ^= 1;
+        CNPU2bits.CN21PUE ^= 1;
 }
 
 char KeypadScan(int key_value) {
@@ -209,14 +226,12 @@ char KeypadScan(int key_value) {
 
 void __attribute__((interrupt,auto_psv)) _CNInterrupt(void){
 
+    DebounceDelay();
     char temp_pressed_char = -1;
     int check_mult=0;
+    
 
-    check_mult = check_mult|KP_COL0;
-    check_mult = check_mult << 1;
-    check_mult = check_mult|KP_COL1;
-    check_mult = check_mult << 1;
-    check_mult = check_mult|KP_COL2;
+    check_mult = (PORTB >> 9) & 0x07;
     if((check_mult == 0x6 || check_mult == 0x5 ||check_mult == 0x3) && (pressed != 1)){
         temp_pressed_char=KeypadScan(check_mult);
         pressed=1;
